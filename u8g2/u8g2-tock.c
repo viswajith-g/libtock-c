@@ -4,25 +4,9 @@
 
 #include <u8g2.h>
 
-#include <screen.h>
+#include <libtock-sync/display/screen.h>
 
 #include "u8g2-tock.h"
-
-typedef struct {
-  int error;
-  int data1;
-  int data2;
-  bool done;
-} ScreenReturn;
-
-// Callback when screen operation finishes.
-static void u8g2_callback(int status, int data1, int data2, void* ud) {
-  ScreenReturn *fbr = (ScreenReturn*) ud;
-  fbr->error = tock_status_to_returncode(status);
-  fbr->data1 = data1;
-  fbr->data2 = data2;
-  fbr->done  = true;
-}
 
 // Copy of the page size function from the u8g2_buffer.c file we can't include.
 static size_t page_size_bytes(u8g2_t* u8g2) {
@@ -72,8 +56,8 @@ static uint8_t u8x8_d_ssd1306_tock(u8x8_t *u8x8,
 
       // Update the default display_info with actual information from the
       // kernel.
-      size_t width = 0, height = 0;
-      screen_get_resolution(&width, &height);
+      uint32_t width = 0, height = 0;
+      libtock_screen_get_resolution(&width, &height);
       u8x8_ssd1306_tock.tile_width = width/8;
       u8x8_ssd1306_tock.tile_height = height/8;
       u8x8_ssd1306_tock.pixel_width = width;
@@ -128,22 +112,46 @@ void u8g2_SendBuffer(u8g2_t *u8g2) {
   // Set the frame to the entire region.
   uint16_t width = u8g2_GetU8x8(u8g2)->display_info->pixel_width;
   uint16_t height = u8g2_GetU8x8(u8g2)->display_info->pixel_height;
-  screen_set_frame(0, 0, width, height);
+  libtocksync_screen_set_frame(0, 0, width, height);
 
-  int ret = screen_allow(u8g2->tile_buf_ptr, page_size_bytes(u8g2));
-  if (ret != TOCK_STATUSCODE_SUCCESS) return;
-
-  ScreenReturn fbr;
-  fbr.done = false;
-  ret = screen_subscribe(u8g2_callback, &fbr);
-  if (ret != TOCK_STATUSCODE_SUCCESS) return;
-
-  syscall_return_t com = command(DRIVER_NUM_SCREEN, 200, page_size_bytes(u8g2), 0);
-  ret = tock_command_return_novalue_to_returncode(com);
-  if (ret == TOCK_STATUSCODE_SUCCESS) {
-    yield_for(&fbr.done);
-    ret = fbr.error;
-  }
-
-  screen_allow(NULL, 0);
+  // Write the data to the screen.
+  libtocksync_screen_write(u8g2->tile_buf_ptr, page_size_bytes(u8g2), page_size_bytes(u8g2));
 }
+
+
+
+void u8g2_SetBufferCurrTileRow(u8g2_t *u8g2, uint8_t row)
+{
+  u8g2->tile_curr_row = row;
+  u8g2->cb->update_dimension(u8g2);
+  u8g2->cb->update_page_win(u8g2);
+}
+
+void u8g2_FirstPage(u8g2_t *u8g2)
+{
+  if ( u8g2->is_auto_page_clear )
+  {
+    u8g2_ClearBuffer(u8g2);
+  }
+  u8g2_SetBufferCurrTileRow(u8g2, 0);
+}
+
+uint8_t u8g2_NextPage(u8g2_t *u8g2)
+{
+  uint8_t row;
+  u8g2_SendBuffer(u8g2);
+  row = u8g2->tile_curr_row;
+  row += u8g2->tile_buf_height;
+  if ( row >= u8g2_GetU8x8(u8g2)->display_info->tile_height )
+  {
+    u8x8_RefreshDisplay( u8g2_GetU8x8(u8g2) );
+    return 0;
+  }
+  if ( u8g2->is_auto_page_clear )
+  {
+    u8g2_ClearBuffer(u8g2);
+  }
+  u8g2_SetBufferCurrTileRow(u8g2, row);
+  return 1;
+}
+

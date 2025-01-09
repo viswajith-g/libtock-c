@@ -1,5 +1,5 @@
-#include <ipc.h>
-#include <tock.h>
+#include <libtock/kernel/ipc.h>
+#include <libtock/tock.h>
 
 struct rot13_buf {
   int8_t length;
@@ -7,7 +7,7 @@ struct rot13_buf {
 };
 
 static void rot13_callback(int pid, int len, int buf, __attribute__ ((unused)) void* ud) {
-  struct rot13_buf *rb = (struct rot13_buf*)buf;
+  struct rot13_buf* rb = (struct rot13_buf*)buf;
   int length = rb->length;
   if (length > len - 1) {
     length = len - 1;

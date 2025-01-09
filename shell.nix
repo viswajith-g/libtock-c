@@ -20,8 +20,8 @@ let
   tockloader = import (pkgs.fetchFromGitHub {
     owner = "tock";
     repo = "tockloader";
-    rev = "v1.11.0";
-    sha256 = "sha256-bPEfpfOZOjOiazqRgn1cnqe4ohLPvocuENKoZx/Qw80=";
+    rev = "v1.12.0";
+    sha256 = "sha256-VgbAKDY/7ZVINDkqSHF7C0zRzVgtk8YG6O/ZmUpsh/g=";
   }) { inherit pkgs withUnfreePkgs; };
 
   elf2tab = pkgs.rustPlatform.buildRustPackage rec {
@@ -47,23 +47,18 @@ in
       python3Full
       tockloader
       pkgsCross.riscv32-embedded.buildPackages.gcc
-    ];
+      uncrustify
+      unzip
+      openocd
+    ] ++ (lib.optionals withUnfreePkgs [
+      segger-jlink
+      tockloader.nrf-command-line-tools
+    ]);
 
-    # Unfortunately, `segger-jlink` has been removed from Nixpkgs due to its
-    # hard dependency in Qt4, which has multiple security issues and is
-    # deprecated since a few years now. Efforts exist to bring the package back,
-    # but for now we don't assume it's available. Once [1] is merged, we can add
-    # the following back:
-    #
-    # buildInputs ++ (lib.optionals withUnfreePkgs [
-    #   segger-jlink
-    #   tockloader.nrf-command-line-tools
-    # ])
-    #
-    # shellHook = ''
-    #   # TODO: This should be patched into the rpath of the respective libraries!
-    #   export LD_LIBRARY_PATH=${pkgs.libusb}/lib:${pkgs.segger-jlink}/lib:$LD_LIBRARY_PATH
-    # '';
-    #
-    # [1]: https://github.com/NixOS/nixpkgs/pull/255185
+    shellHook = ''
+      # TODO: This should be patched into the rpath of the respective libraries!
+      export LD_LIBRARY_PATH=${pkgs.libusb}/lib:$LD_LIBRARY_PATH
+    '' + (lib.optionalString withUnfreePkgs ''
+      export LD_LIBRARY_PATH=${pkgs.segger-jlink}/lib:$LD_LIBRARY_PATH
+    '');
   }
