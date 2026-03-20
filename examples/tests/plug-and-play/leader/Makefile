@@ -1,13 +1,10 @@
 # Makefile for user application
 
 # Specify this directory relative to the current application.
-TOCK_USERLAND_BASE_DIR = ../..
+TOCK_USERLAND_BASE_DIR = ../../../..
 
 # Which files to compile.
 C_SRCS := $(wildcard *.c)
 
-ELF2TAB_ARGS += --app-version 3
-
-# Include userland master makefile. Contains rules and flags for actually
-# building the application.
+# Include app loading support rules. Rules to generate app binary images.
 include $(TOCK_USERLAND_BASE_DIR)/AppMakefile.mk

@@ -30,7 +30,7 @@ static void write_done_callback(__attribute__((unused)) int   arg0,
 * Takes app size and the callback function as arguments
 ******************************************************************************************************/
 
-returncode_t libtock_app_loader_setup(uint32_t app_size, subscribe_upcall cb) {
+returncode_t libtock_app_loader_setup(uint32_t app_size, uint32_t binary_type, subscribe_upcall cb) {
   // set up the setup done callback
   int err = libtock_app_loader_set_setup_upcall(cb, NULL);
   if (err != 0) {
@@ -38,7 +38,7 @@ returncode_t libtock_app_loader_setup(uint32_t app_size, subscribe_upcall cb) {
     return err;
   }
 
-  return libtock_app_loader_command_setup(app_size);
+  return libtock_app_loader_command_setup(app_size, binary_type);
 }
 
 
@@ -54,6 +54,7 @@ returncode_t libtock_app_loader_write(uint32_t offset, uint8_t* chunk_data, size
   static uint8_t write_buffer[FLASH_BUFFER_SIZE];
 
   if (chunk_len > FLASH_BUFFER_SIZE) {
+    printf("[libtock] chunk length greater than flash buffer size\n");
     return RETURNCODE_FAIL;
   }
 
@@ -74,7 +75,7 @@ returncode_t libtock_app_loader_write(uint32_t offset, uint8_t* chunk_data, size
     memset(write_buffer + chunk_len, 0, FLASH_BUFFER_SIZE - chunk_len);
   }
 
-  ret = libtock_app_loader_command_write(offset, FLASH_BUFFER_SIZE);
+  ret = libtock_app_loader_command_write(offset, chunk_len);
   if (ret != RETURNCODE_SUCCESS) {
     printf("[Error] Flash write failed at offset 0x%lx: err %d\n", offset, ret);
     return ret;
@@ -119,6 +120,17 @@ returncode_t libtock_app_loader_load(subscribe_upcall cb) {
   }
 
   return libtock_app_loader_command_load();
+}
+
+returncode_t libtock_app_loader_load_xip(uintptr_t address,
+                                          size_t size,
+                                          subscribe_upcall cb) {
+  int err = libtock_app_loader_set_load_upcall(cb, NULL);
+  if (err != 0) {
+    printf("[Error] Failed to set load done callback: %d\n", err);
+    return err;
+  }
+    return libtock_app_loader_command_load_xip(address, size);
 }
 
 /******************************************************************************************************

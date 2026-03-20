@@ -39,8 +39,8 @@ returncode_t libtock_app_loader_write_buffer(uint8_t* buffer, uint32_t len) {
   return tock_allow_ro_return_to_returncode(aval);
 }
 
-returncode_t libtock_app_loader_command_setup(uint32_t app_length) {
-  syscall_return_t res = command(DRIVER_NUM_APP_LOADER, 1, app_length, 0);
+returncode_t libtock_app_loader_command_setup(uint32_t app_length, uint32_t binary_type) {
+  syscall_return_t res = command(DRIVER_NUM_APP_LOADER, 1, app_length, binary_type);
   return tock_command_return_novalue_to_returncode(res);
 }
 
@@ -61,6 +61,11 @@ returncode_t libtock_app_loader_command_load(void) {
 
 returncode_t libtock_app_loader_command_abort(void) {
   syscall_return_t res = command(DRIVER_NUM_APP_LOADER, 5, 0, 0);
+  return tock_command_return_novalue_to_returncode(res);
+}
+
+returncode_t libtock_app_loader_command_load_xip(uintptr_t address, size_t size) {
+  syscall_return_t res = command(DRIVER_NUM_APP_LOADER, 6, address, size);
   return tock_command_return_novalue_to_returncode(res);
 }
 

@@ -1,13 +1,14 @@
 # Makefile for user application
 
 # Specify this directory relative to the current application.
-TOCK_USERLAND_BASE_DIR = ../..
+TOCK_USERLAND_BASE_DIR = ../../../../..
 
 # Which files to compile.
 C_SRCS := $(wildcard *.c)
 
-ELF2TAB_ARGS += --app-version 3
+STACK_SIZE = 2048
+APP_HEAP_SIZE = 1024
 
-# Include userland master makefile. Contains rules and flags for actually
-# building the application.
+PACKAGE_NAME = buggy-temp
+
 include $(TOCK_USERLAND_BASE_DIR)/AppMakefile.mk

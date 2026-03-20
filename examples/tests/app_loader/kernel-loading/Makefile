@@ -6,24 +6,20 @@ TOCK_USERLAND_BASE_DIR = ../../../..
 # Which files to compile.
 C_SRCS := $(wildcard *.c)
 
-# List of apps to generate embed rules for
-APPS_TO_EMBED = \
-  $(TOCK_USERLAND_BASE_DIR)/examples/blink \
-  $(TOCK_USERLAND_BASE_DIR)/examples/tests/adc/adc
-
-# Include app loading support rules. Rules to generate app binary images.
-include ../support/CommonAppMake.mk
+# Include userland master makefile. Contains rules and flags for actually
+# building the application.
+include $(TOCK_USERLAND_BASE_DIR)/AppMakefile.mk
 
 # ===== paths =====
 BUILD_DIR := build
-BIN_NAME := button-press-loading
+BIN_NAME := kernel-loading
 TAB_FILE  := $(BUILD_DIR)/$(BIN_NAME).tab
 EXTRACT_DIR := $(BUILD_DIR)/flash_extract
 APP_BIN := $(EXTRACT_DIR)/$(BIN_NAME).bin
 APP_BIN_ABS := $(abspath $(APP_BIN))
 
 # ===== placement =====
-APP_FLASH_ADDRESS ?= 0x00070000   # nrf52dk's _sapps default
+APP_FLASH_ADDRESS ?= 0x00040000   # nrf52dk's _sapps default
 ERASE_LEN ?= 0x20000              # 128 KiB window
 
 # ===== J-Link =====

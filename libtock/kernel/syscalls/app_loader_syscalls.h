@@ -19,7 +19,7 @@ bool libtock_app_loader_exists(void);
  * Command to request the kernel to set up for a new app.
  * This functions takes the size of the new app as the argument.
  */
-returncode_t libtock_app_loader_command_setup(uint32_t app_length);
+returncode_t libtock_app_loader_command_setup(uint32_t app_length, uint32_t binary_type);
 
 /*
  * Function to set up a shared buffer with the capsule.
@@ -46,6 +46,11 @@ returncode_t libtock_app_loader_command_finalize(void);
  * Command to request the kernel to load the newly flashed app.
  */
 returncode_t libtock_app_loader_command_load(void);
+
+/*
+ * Command to request the kernel to load app in XIP storage.
+ */
+returncode_t libtock_app_loader_command_load_xip(uintptr_t address, size_t size);
 
 /*
  * Command to request the kernel to abort setup/writing process.

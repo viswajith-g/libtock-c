@@ -1,18 +1,25 @@
-# Makefile for user application
+# Makefile for user application (OpenThread MTD + CoAP)
 
-# Specify this directory relative to the current application.
+# Path to libtock-c root relative to this app
 TOCK_USERLAND_BASE_DIR = ../../../..
 
-# Which files to compile.
-C_SRCS := $(wildcard *.c)
+# Pull in OpenThread (MTD) integration for libtock-c
+include $(TOCK_USERLAND_BASE_DIR)/libopenthread/libopenthread-mtd.mk
 
-# List of apps to generate embed rules for
-APPS_TO_EMBED = \
-  $(TOCK_USERLAND_BASE_DIR)/examples/blink \
-  $(TOCK_USERLAND_BASE_DIR)/examples/tests/adc/adc
+# App name (optional)
+APP_NAME := ot_coap_downloader
 
-# Include app loading support rules. Rules to generate app binary images.
-include ../support/CommonAppMake.mk
+# Larger stack for OpenThread
+STACK_SIZE := 6000
+
+# Your sources
+C_SRCS := main.c
+
+# Link the OpenThread CoAP library (the lib path is exported by the mk above)
+# LIBRARIES += $(LIBOPENTHREAD_LIB_DIR)/libopenthread-coap.a
+
+# Build with the standard libtock-c rules
+include $(TOCK_USERLAND_BASE_DIR)/AppMakefile.mk
 
 # ===== paths =====
 BUILD_DIR := build
@@ -23,7 +30,7 @@ APP_BIN := $(EXTRACT_DIR)/$(BIN_NAME).bin
 APP_BIN_ABS := $(abspath $(APP_BIN))
 
 # ===== placement =====
-APP_FLASH_ADDRESS ?= 0x00070000   # nrf52dk's _sapps default
+APP_FLASH_ADDRESS ?= 0x00040000   # nrf52dk's _sapps default
 ERASE_LEN ?= 0x20000              # 128 KiB window
 
 # ===== J-Link =====

@@ -24,6 +24,7 @@ const char* new_app_name    = NULL;
 unsigned char* new_app_data = NULL;
 size_t new_app_size         = 0;
 size_t new_binary_size      = 0;
+size_t new_binary_type      = 0;
 uint32_t write_buffer_size  = 4096;
 
 /******************************************************************************************************
@@ -63,14 +64,19 @@ static void app_load_done_callback(int                           arg0,
 static void button_callback(__attribute__ ((unused)) returncode_t retval, int btn_num, __attribute__ (
                               (unused)) bool pressed) {
   // Callback for button presses.
-  if (btn_num < BINARY_COUNT) {
+  if (btn_num == 1) {
     app_load        = true;
-    new_app_name    = binary_names[btn_num];
-    new_app_data    = (uint8_t*)(uintptr_t)binaries[btn_num];
-    new_app_size    = binary_sizes[btn_num];
-    new_binary_size = actual_sizes[btn_num];
-  } else {
-    printf("[App Loader] Invalid button selected. Unable to install!\n");
+    new_app_name    = binary_names[0];
+    new_app_data    = (uint8_t*)(uintptr_t)binaries[0];
+    new_app_size    = binary_sizes[0];
+    new_binary_size = actual_sizes[0];
+  }
+  if (btn_num == 2) {
+    app_load        = true;
+    new_app_name    = binary_names[1];
+    new_app_data    = (uint8_t*)(uintptr_t)binaries[1];
+    new_app_size    = binary_sizes[1];
+    new_binary_size = actual_sizes[1];
   }
 }
 
@@ -81,8 +87,8 @@ static void button_callback(__attribute__ ((unused)) returncode_t retval, int bt
 * Takes app size and the app binary as arguments
 ******************************************************************************************************/
 
-static void appload(size_t binary_size, size_t app_size, uint8_t binary[]) {
-  int ret = libtock_app_loader_setup(app_size, app_setup_done_callback);
+static void appload(size_t binary_size, size_t app_size, size_t binary_type, uint8_t binary[]) {
+  int ret = libtock_app_loader_setup(app_size, binary_type, app_setup_done_callback);
   if (ret != RETURNCODE_SUCCESS) {
     printf("[Error] Setup Failed: %d.\n", ret);
     tock_exit(ret);
@@ -149,12 +155,15 @@ int main(void) {
   int err = libtock_button_count(&count);
   // Ensure there is a button to use.
   if (err < 0) return err;
-  printf("[Log] There are %d buttons on this board.\n", count);
+  // printf("[Log] There are %d buttons on this board.\n", count);
 
   // Enable interrupts on each button.
-  for (int i = 0; i < count; i++) {
-    libtock_button_notify_on_press(i, button_callback);
-  }
+  // for (int i = 0; i < count; i++) {
+  //   libtock_button_notify_on_press(i, button_callback);
+  // }
+
+  libtock_button_notify_on_press(1, button_callback);
+  libtock_button_notify_on_press(2, button_callback);
 
   printf("[Log] Waiting for a button press.\n");
 
@@ -162,7 +171,7 @@ int main(void) {
     if (app_load) {
       printf("[Event] Button for %s pressed!\n", new_app_name);
       printf("size: %d bytes\n", new_app_size);
-      appload(new_binary_size, new_app_size, new_app_data);
+      appload(new_binary_size, new_app_size, new_binary_type, new_app_data);
       app_load = false;
     }
     yield();
