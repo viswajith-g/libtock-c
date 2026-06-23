@@ -39,6 +39,9 @@ override CPPFLAGS_$(LIBNAME) += -DMBEDTLS_CONFIG_FILE=\"mbedtls-config.h\"
 
 # Avoid failing in CI due to warnings in the library.
 override CPPFLAGS_$(LIBNAME) += -Wno-error
+# Disable C++ exception handling and RTTI to save flash space
+override CPPFLAGS_$(LIBNAME) += -fno-exceptions
+override CPPFLAGS_$(LIBNAME) += -fno-rtti
 # Ignore warnings that openthread seems to not care about.
 override CPPFLAGS_$(LIBNAME) += -Wno-useless-cast -Wno-old-style-cast
 override CPPFLAGS_$(LIBNAME) += -Wno-missing-declarations -Wno-date-time

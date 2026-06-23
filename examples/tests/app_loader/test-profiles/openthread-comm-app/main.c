@@ -5,15 +5,12 @@
 
 #include <libopenthread/platform/openthread-system.h>
 #include <libopenthread/platform/plat.h>
-// #include <openthread/platform/alarm-milli.h>
 #include <openthread/dataset.h>
 #include <openthread/instance.h>
-// #include <openthread/link.h>
+// #include <openthread/ip6.h>
 #include <openthread/tasklet.h>
 #include <openthread/thread.h>
 #include <openthread/udp.h>
-
-// #include <libtock-sync/services/alarm.h>
 
 #include <libtock/kernel/ipc.h>
 #include <libtock/tock.h>
@@ -48,15 +45,6 @@ static void openthread_ipc_callback(int pid, int len, int buf,
   //        pid, pending_temperature);
 }
 
-// static libtock_alarm_t ot_alarm;
-// static bool ot_alarm_fired = false;
-
-// static void ot_alarm_cb(__attribute__((unused)) uint32_t now,
-//                         __attribute__((unused)) uint32_t scheduled,
-//                         __attribute__((unused)) void* opaque) {
-//     ot_alarm_fired = true;
-// }
-
 int main(__attribute__((unused)) int argc, __attribute__((unused)) char* argv[]) {
   ipc_register_service_callback("openthread_app", openthread_ipc_callback, NULL);
 
@@ -67,41 +55,10 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char* argv[])
   assert(instance);
 
   setNetworkConfiguration(instance);
-  initUdp(instance);
-  
+  otThreadSetChildTimeout(instance, 60);
   otIp6SetEnabled(instance, true);
+  initUdp(instance);
   otThreadSetEnabled(instance, true);
-
-  // // Attachment loop WITH yield
-  // while (otThreadGetDeviceRole(instance) < OT_DEVICE_ROLE_CHILD) {
-  //     otTaskletsProcess(instance);
-  //     otSysProcessDrivers(instance);
-  //     if (!otTaskletsArePending(instance) && !openthread_platform_pending_work()) {
-  //         yield();
-  //     }
-  //     if (otThreadGetDeviceRole(instance) == OT_DEVICE_ROLE_CHILD){
-  //       printf("Attached to nwk as child\n");
-  //     }
-  // }
-
-  // otLinkModeConfig mode;
-  // memset(&mode, 0, sizeof(mode));
-  // mode.mRxOnWhenIdle = false;
-  // mode.mDeviceType   = false;
-  // mode.mNetworkData  = false;
-  // otThreadSetLinkMode(instance, mode);
-  // otLinkSetPollPeriod(instance, 240000);
-
-
-  // uint32_t start = otPlatAlarmMilliGetNow();
-  // while (otPlatAlarmMilliGetNow() - start < 5000) {
-  //     otTaskletsProcess(instance);
-  //     otSysProcessDrivers(instance);
-  //     if (!otTaskletsArePending(instance) && !openthread_platform_pending_work()) {
-  //         yield();
-  //     }
-  // }
-  // printf("Attached successfully! Transitioning to main loop.\n");
 
   for (;;) {
     otTaskletsProcess(instance);
@@ -109,16 +66,13 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char* argv[])
 
     if (transmit_pending) {
       otDeviceRole role = otThreadGetDeviceRole(instance);
-      // printf("Role: %d\n", role);
 
       if (role >= OT_DEVICE_ROLE_CHILD) {
         // printf("[OT] Transmitting temperature: %d°F\n", pending_temperature);
-        // otLinkSendDataRequest(instance);
         sendUdpTemperature(instance, pending_temperature);
-      } 
-      // else {
-      //   // printf("[OT] WARNING: Temperature pending but network not ready (role: %d)\n", role);
-      // }
+      } else {
+        // printf("[OT] WARNING: Temperature pending but network not ready (role: %d)\n", role);
+      }
 
       if (client_pid >= 0) {
         ipc_notify_client(client_pid);
@@ -130,14 +84,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char* argv[])
 
     if (!otTaskletsArePending(instance) && !openthread_platform_pending_work()) {
       yield();
-      // yield_no_wait();
-      // libtocksync_alarm_delay_ms(100);
     }
-    // if (!otTaskletsArePending(instance) && !openthread_platform_pending_work()) {
-    //     ot_alarm_fired = false;
-    //     libtock_alarm_in_ms(1000, ot_alarm_cb, NULL, &ot_alarm);
-    //     libtocksync_alarm_yield_for_with_timeout(&ot_alarm_fired, 1000);
-    // }
   }
 
   return 0;

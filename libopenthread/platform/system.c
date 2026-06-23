@@ -123,7 +123,8 @@ bool pending_rx_done_callback_status(void) {
 bool openthread_platform_pending_work(void){
     return (pending_alarm_done_callback_status() || 
             pending_tx_done_callback_status(NULL, NULL, NULL) || 
-            pending_rx_done_callback_status());
+            pending_rx_done_callback_status()) ||
+            otPlatRadioPostTxWindowActive();
 }
 
 void readRingBuf(otInstance *aInstance) {
@@ -161,26 +162,50 @@ void readRingBuf(otInstance *aInstance) {
     } 
 }
 
-void otSysProcessDrivers(otInstance *aInstance){
+// void otSysProcessDrivers(otInstance *aInstance){
 
-  readRingBuf(aInstance);
+//   readRingBuf(aInstance);
 
-  if (pending_alarm_done_callback_status()) {
-    reset_pending_alarm_done_callback();
-    otPlatAlarmMilliFired(aInstance);
-  }
+//   if (pending_alarm_done_callback_status()) {
+//     reset_pending_alarm_done_callback();
+//     otPlatAlarmMilliFired(aInstance);
+//   }
 
-  otRadioFrame ackFrame;
-  otRadioFrame txFrame;
-  returncode_t status;
+//   otRadioFrame ackFrame;
+//   otRadioFrame txFrame;
+//   returncode_t status;
 
-  if (pending_tx_done_callback_status(&ackFrame, &status, &txFrame)) {
-    reset_pending_tx_done_callback();
+//   if (pending_tx_done_callback_status(&ackFrame, &status, &txFrame)) {
+//     reset_pending_tx_done_callback();
 
-    if (status == RETURNCODE_SUCCESS) otPlatRadioTxDone(aInstance, &txFrame, &ackFrame, OT_ERROR_NONE);
-    else otPlatRadioTxDone(aInstance, &txFrame, &ackFrame, OT_ERROR_ABORT);
-  }
+//     if (status == RETURNCODE_SUCCESS) otPlatRadioTxDone(aInstance, &txFrame, &ackFrame, OT_ERROR_NONE);
+//     else otPlatRadioTxDone(aInstance, &txFrame, &ackFrame, OT_ERROR_ABORT);
+//   }
 
+// }
+
+void otSysProcessDrivers(otInstance *aInstance) {
+    readRingBuf(aInstance);
+
+    if (pending_alarm_done_callback_status()) {
+        reset_pending_alarm_done_callback();
+        otPlatAlarmMilliFired(aInstance);
+    }
+
+    otRadioFrame ackFrame;
+    otRadioFrame txFrame;
+    returncode_t status;
+
+    if (pending_tx_done_callback_status(&ackFrame, &status, &txFrame)) {
+        reset_pending_tx_done_callback();
+
+        if (status == RETURNCODE_SUCCESS)
+            otPlatRadioTxDone(aInstance, &txFrame, &ackFrame, OT_ERROR_NONE);
+        else
+            otPlatRadioTxDone(aInstance, &txFrame, &ackFrame, OT_ERROR_ABORT);
+    }
+
+    otPlatRadioProcessPostTxWindow();  // keep radio awake for long enough to receive rx in sed mode
 }
 
 

@@ -122,16 +122,16 @@ returncode_t libtock_app_loader_load(subscribe_upcall cb) {
   return libtock_app_loader_command_load();
 }
 
-returncode_t libtock_app_loader_load_xip(uintptr_t address,
-                                          size_t size,
-                                          subscribe_upcall cb) {
-  int err = libtock_app_loader_set_load_upcall(cb, NULL);
-  if (err != 0) {
-    printf("[Error] Failed to set load done callback: %d\n", err);
-    return err;
-  }
-    return libtock_app_loader_command_load_xip(address, size);
-}
+// returncode_t libtock_app_loader_load_xip(uintptr_t address,
+//                                           size_t size,
+//                                           subscribe_upcall cb) {
+//   int err = libtock_app_loader_set_load_upcall(cb, NULL);
+//   if (err != 0) {
+//     printf("[Error] Failed to set load done callback: %d\n", err);
+//     return err;
+//   }
+//     return libtock_app_loader_command_load_xip(address, size);
+// }
 
 /******************************************************************************************************
 * Function to abort the setup/writing of new app binary
@@ -151,18 +151,18 @@ returncode_t libtock_app_loader_abort(subscribe_upcall cb) {
 }
 
 /******************************************************************************************************
-* Function to uninstall an existing application
+* Function to unload a running process
 *
-* Takes the short id and version of the app and the callback function as arguments
+* Takes the short id of the process and the callback function as arguments
 ******************************************************************************************************/
 
-returncode_t libtock_app_loader_uninstall(uint32_t app_short_id, uint32_t app_version, subscribe_upcall cb) {
-  // set up the uninstall done callback
-  int err = libtock_app_loader_set_uninstall_upcall(cb, NULL);
+returncode_t libtock_app_loader_unload(uint32_t app_short_id, subscribe_upcall cb) {
+  // set up the unload done callback
+  int err = libtock_app_loader_set_unload_upcall(cb, NULL);
   if (err != 0) {
-    printf("[Error] Failed to set setup done callback: %d\n", err);
+    printf("[Error] Failed to set unload done callback: %d\n", err);
     return err;
   }
 
-  return libtock_app_loader_command_uninstall(app_short_id, app_version);
+  return libtock_app_loader_command_unload(app_short_id);
 }

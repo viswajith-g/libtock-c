@@ -35,3 +35,7 @@ bool openthread_platform_pending_work(void);
 
 // Initializer needed for alarm PAL methods.
 void init_otPlatAlarm(void);
+
+// To keep the rx window active after transmission 
+bool otPlatRadioPostTxWindowActive(void);
+void otPlatRadioProcessPostTxWindow(void);

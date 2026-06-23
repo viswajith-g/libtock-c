@@ -13,6 +13,13 @@
 
 returncode_t ieee802154_set_channel_and_commit(uint8_t channel);
 
+static struct stay_awake_window {
+    bool active;
+    uint32_t tx_done_time;
+} stay_awake_window = {false, 0};
+
+#define POST_TX_RX_WINDOW_MS 20
+
 static uint8_t tx_mPsdu[OT_RADIO_FRAME_MAX_SIZE];
 static otRadioFrame transmitFrame = {
   .mPsdu   = tx_mPsdu,
@@ -37,6 +44,8 @@ static void tx_done_callback(statuscode_t status, bool acked) {
 	pending_tx_done_callback.flag = true;
   pending_tx_done_callback.acked = acked;
   pending_tx_done_callback.status = status;
+  stay_awake_window.active = true;
+  stay_awake_window.tx_done_time = otPlatAlarmMilliGetNow();
 }
 
 bool pending_tx_done_callback_status(otRadioFrame *ackFrame, returncode_t *status, otRadioFrame *txFrame) {
@@ -129,24 +138,34 @@ otError otPlatRadioDisable(otInstance *aInstance) {
   }
 }
 
+// otError otPlatRadioSleep(otInstance *aInstance) {
+//   OT_UNUSED_VARIABLE(aInstance);
+
+//   int retCode = libtock_ieee802154_radio_off();
+
+//   if (retCode == RETURNCODE_SUCCESS) {
+//     return OT_ERROR_NONE;
+//   } else {
+//     printf("Sleep Radio Failed!\n");
+//     return OT_ERROR_FAILED;
+//   }
+//   return OT_ERROR_NONE;
+// }
 otError otPlatRadioSleep(otInstance *aInstance) {
-  OT_UNUSED_VARIABLE(aInstance);
-
-  int retCode = libtock_ieee802154_radio_off();
-
-  if (retCode == RETURNCODE_SUCCESS) {
-    return OT_ERROR_NONE;
-  } else {
-    printf("Sleep Radio Failed!\n");
-    return OT_ERROR_FAILED;
-  }
-  return OT_ERROR_NONE;
+    OT_UNUSED_VARIABLE(aInstance);
+    if (stay_awake_window.active) {
+        return OT_ERROR_NONE;
+    }
+    int retCode = libtock_ieee802154_radio_off();
+    return (retCode == RETURNCODE_SUCCESS) ? OT_ERROR_NONE : OT_ERROR_FAILED;
 }
 
 otError otPlatRadioReceive(otInstance *aInstance, uint8_t aChannel) {
   if (!otPlatRadioIsEnabled(aInstance)){
     otPlatRadioEnable(aInstance);
   }
+
+  libtock_ieee802154_radio_on();
 
   int retCode = ieee802154_set_channel_and_commit(aChannel);
   if (retCode != RETURNCODE_SUCCESS) {
@@ -317,4 +336,16 @@ int8_t otPlatRadioGetReceiveSensitivity(otInstance *aInstance) {
   OT_UNUSED_VARIABLE(aInstance);
   // printf("%s:%d in %s\n", __FILE__, __LINE__, __func__);
   return -50;
+}
+
+bool otPlatRadioPostTxWindowActive(void) {
+    return stay_awake_window.active;
+}
+
+void otPlatRadioProcessPostTxWindow(void) {
+    if (!stay_awake_window.active) return;
+    if ((otPlatAlarmMilliGetNow() - stay_awake_window.tx_done_time) >= POST_TX_RX_WINDOW_MS) {
+        stay_awake_window.active = false;
+        libtock_ieee802154_radio_off();
+    }
 }

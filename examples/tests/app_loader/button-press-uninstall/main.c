@@ -9,7 +9,7 @@
 #include <libtock/tock.h>
 
 /******************************************************************************************************
-* Short ID and version of app that has to be uninstalled (Blink in this case)
+* Short ID and version of app that has to be unloaded (Blink in this case)
 ******************************************************************************************************/
 const uint32_t short_id = 4246331976;
 const uint32_t version  = 0;
@@ -17,26 +17,27 @@ const uint32_t version  = 0;
 /******************************************************************************************************
 * Callback Tracking Flags
 ******************************************************************************************************/
-static bool uninstall_done = false;   // to check if setup is done
-static bool app_uninstall  = false;   // to track if app has to be uninstalled
+static bool unload_done = false;   // to check if setup is done
+static bool app_unload  = false;   // to track if app has to be unloaded
 
 /******************************************************************************************************
 * Callback functions
 *
-* Set button callback to initiate the uninstall on pressing buttons
+* Set button callback to initiate the unload on pressing buttons
 ******************************************************************************************************/
 
-static void app_uninstall_done_callback(__attribute__((unused)) int   arg0,
-                                        __attribute__((unused)) int   arg1,
+static void app_unload_done_callback(int   arg0,
+                                     int   arg1,
                                         __attribute__((unused)) int   arg2,
                                         __attribute__((unused)) void* ud) {
 
   if (arg0 != RETURNCODE_SUCCESS) {
-    printf("[Error] Uninstall failed: %d.\n", arg0);
+    printf("[Error] unload failed: %d.\n", arg0);
   } else {
-    printf("[Success] Uninstalled app successfully.\n");
+    printf("[Success] unloaded app successfully.\n");
   }
-  uninstall_done = true;
+  unload_done = true;
+  printf("opaque value: %d\n", arg1);
 }
 
 // Callback for button presses.
@@ -44,9 +45,9 @@ static void button_callback(__attribute__ ((unused)) returncode_t retval, int bt
                               (unused)) bool pressed) {
   // Callback for button presses.
   if (btn_num == 0) {
-    app_uninstall = true;
+    app_unload = true;
   } else {
-    printf("[App Uninstaller] Invalid button selected. Unable to uninstall!\n");
+    printf("[App unloader] Invalid button selected. Unable to unload!\n");
   }
 }
 
@@ -56,7 +57,7 @@ static void button_callback(__attribute__ ((unused)) returncode_t retval, int bt
 ******************************************************************************************************/
 
 int main(void) {
-  printf("[Log] Simple test app to uninstall an app during runtime.\n");
+  printf("[Log] Simple test app to unload an app during runtime.\n");
 
   // check if app loader driver exists
   if (!libtock_app_loader_exists()) {
@@ -78,16 +79,16 @@ int main(void) {
   printf("[Log] Waiting for a button press.\n");
 
   while (1) {
-    if (app_uninstall) {
-      printf("Uninstalling app with Short ID: %" PRIu32 " and version %" PRIu32 "\n", short_id, version);
-      int ret = libtock_app_loader_uninstall(short_id, version, app_uninstall_done_callback);
+    if (app_unload) {
+      printf("unloading app with Short ID: %" PRIu32 "\n", short_id);
+      int ret = libtock_app_loader_unload(short_id, app_unload_done_callback);
       if (ret != RETURNCODE_SUCCESS) {
-        printf("[Error] Uninstall Failed: %d.\n", ret);
+        printf("[Error] unload Failed: %d.\n", ret);
         tock_exit(ret);
       }
-      yield_for(&uninstall_done);
-      uninstall_done = false;
-      app_uninstall  = false;
+      yield_for(&unload_done);
+      unload_done = false;
+      app_unload  = false;
     }
     yield();
   }

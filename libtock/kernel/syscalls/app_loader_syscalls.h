@@ -50,7 +50,7 @@ returncode_t libtock_app_loader_command_load(void);
 /*
  * Command to request the kernel to load app in XIP storage.
  */
-returncode_t libtock_app_loader_command_load_xip(uintptr_t address, size_t size);
+// returncode_t libtock_app_loader_command_load_xip(uintptr_t address, size_t size);
 
 /*
  * Command to request the kernel to abort setup/writing process.
@@ -58,9 +58,9 @@ returncode_t libtock_app_loader_command_load_xip(uintptr_t address, size_t size)
 returncode_t libtock_app_loader_command_abort(void);
 
 /*
- * Command to request the kernel to uninstall an application.
+ * Command to request the kernel to unload an application.
  */
-returncode_t libtock_app_loader_command_uninstall(uint32_t app_short_id, uint32_t app_version);
+returncode_t libtock_app_loader_command_unload(uint32_t app_short_id);
 
 /*
  * Functions to setup the callback from capsule.
@@ -72,7 +72,7 @@ returncode_t libtock_app_loader_set_write_upcall(subscribe_upcall cb, void* user
 returncode_t libtock_app_loader_set_finalize_upcall(subscribe_upcall cb, void* userdata);
 returncode_t libtock_app_loader_set_load_upcall(subscribe_upcall cb, void* userdata);
 returncode_t libtock_app_loader_set_abort_upcall(subscribe_upcall cb, void* userdata);
-returncode_t libtock_app_loader_set_uninstall_upcall(subscribe_upcall cb, void* userdata);
+returncode_t libtock_app_loader_set_unload_upcall(subscribe_upcall cb, void* userdata);
 
 
 
